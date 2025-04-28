@@ -17,6 +17,11 @@ requires-python = ">=3.10"
 readme = "README.md"
 license = {text = "MIT"}
 
+[project.optional-dependencies]
+h3 = [
+    "h3>=4.2.2",
+]
+
 [tool.pixi.workspace]
 channels = ["conda-forge"]
 platforms = ["linux-64"]
@@ -26,3 +31,4 @@ geo = { path = ".", editable = true }
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
+h3 = { features = ["h3"], solve-group = "default" }
