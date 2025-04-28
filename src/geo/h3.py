@@ -13,9 +13,8 @@ def to_polygon(h3_hex):
 
 def grid(area, level=9):
     hexs = h3.geo_to_cells(area, level)
+    geo = [h3.cells_to_h3shape([h]) for h in hexs]
     grid = gpd.GeoDataFrame(
-        geometry=list(map(h3.cells_to_h3shape, hexs)),
-        index=pd.Index(hexs, name="cell_id"),
-        crs="EPSG:4326",
+        geometry=geo, index=pd.Index(hexs, name="cell_id"), crs="EPSG:4326"
     )
     return grid
