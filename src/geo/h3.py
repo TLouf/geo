@@ -11,10 +11,12 @@ def to_polygon(h3_hex):
     return shapely.geometry.shape(h3_shape)
 
 
-def grid(area, level=9):
+def grid(area, level=9, clip=False):
     hexs = h3.geo_to_cells(area, level)
     geo = [h3.cells_to_h3shape([h]) for h in hexs]
     grid = gpd.GeoDataFrame(
         geometry=geo, index=pd.Index(hexs, name="cell_id"), crs="EPSG:4326"
     )
+    if clip:
+        grid = grid.clip(area)
     return grid
