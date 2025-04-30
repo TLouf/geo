@@ -135,11 +135,12 @@ packages:
 - pypi: .
   name: geo
   version: 0.1.0
-  sha256: 7f68614266934a2a86ccad63edf21c0a2ae06f17cd12fa0e9b17c9fa92f00a0d
+  sha256: 80fac11cab053d3f490162777a9204603a68339a64e601b2d7a9356c1810ae5c
   requires_dist:
   - numpy>=1.26.4
   - geopandas>=0.14.3
   - h3>=4.2.2 ; extra == 'h3'
+  - pygeohash>=3.0.1 ; extra == 'geohash'
   requires_python: '>=3.10'
   editable: true
 - pypi: https://files.pythonhosted.org/packages/c4/64/7d344cfcef5efddf9cf32f59af7f855828e9d74b5f862eddf5bfd9f25323/geopandas-1.0.1-py3-none-any.whl

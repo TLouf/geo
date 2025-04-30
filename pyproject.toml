@@ -21,6 +21,9 @@ license = {text = "MIT"}
 h3 = [
     "h3>=4.2.2",
 ]
+geohash = [
+  "pygeohash>=3.0.1",
+]
 
 [tool.pixi.workspace]
 channels = ["conda-forge"]
@@ -31,4 +34,5 @@ geo = { path = ".", editable = true }
 
 [tool.pixi.environments]
 default = { solve-group = "default" }
+geohash = { features = ["geohash"], solve-group = "default" }
 h3 = { features = ["h3"], solve-group = "default" }

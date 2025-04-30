@@ -1,1 +1,1 @@
-from . import agg, dims, grid, h3, region
+from . import agg, dims, geohash, grid, h3, region

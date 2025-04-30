@@ -27,6 +27,7 @@ class _LazyModule(ModuleType):
 
     _mod_pfx: ClassVar[dict[str, str]] = {
         "h3": "h3.",
+        "pygeohash": "pgh.",
     }
 
     def __init__(
@@ -127,10 +128,13 @@ def _lazy_import(module_name: str) -> ModuleType:
 
 if TYPE_CHECKING:
     import h3
+    import pygeohash
 else:
     # heavy/optional third party libs
     h3 = _lazy_import("h3")
+    pygeohash = _lazy_import("pygeohash")
 
 __all__ = [
     "h3",
+    "pygeohash",
 ]
