@@ -1,12 +1,9 @@
-from typing import TYPE_CHECKING
-
+import geopandas as gpd
+import numpy as np
 import pandas as pd
 import shapely
 import shapely.ops
 from shapely.geometry import LineString
-
-if TYPE_CHECKING:
-    from geopandas import GeoDataFrame
 
 
 def cut_line_from_endpoints(
@@ -36,7 +33,7 @@ def cut_line_from_endpoints(
                 return LineString(new_coords)
 
 
-def cut_lines_from_endpoints(gdf: GeoDataFrame, distance: float):
+def cut_lines_from_endpoints(gdf: gpd.GeoDataFrame, distance: float):
     to_cut = gdf.length > distance * 2
     cut_gdf = gdf.loc[to_cut].reset_index()
     cut_gdf["start_p"] = cut_gdf.geometry.interpolate(distance)
@@ -70,3 +67,59 @@ def cut_lines_from_endpoints(gdf: GeoDataFrame, distance: float):
     empty_gdf = gdf.loc[~to_cut].copy()
     empty_gdf.geometry = [LineString() for _ in range(empty_gdf.shape[0])]
     return pd.concat([cut_gdf, empty_gdf]).sort_index()
+
+
+def get_segments_arr(
+    lines_coords: np.ndarray, same_line_mask: np.ndarray | None = None
+):
+    """Create all the segments contained in input LineStrings.
+
+    Adapted from https://gist.github.com/jGaboardi/754e878ee4cac986132295ed43e74512.
+
+    Parameters
+    ----------
+    lines_coords : np.ndarray
+        2D array of (x, y) coordinates of all points of some lines.
+    same_line_mask : np.ndarray, optional
+        Boolean mask indicating if each pair of consecutive coordinates in
+        `lines_coords` corresponds to the same input line, to avoid creating segments
+        between different lines. None by default, in which case all points are
+        considered to belong to the same line.
+
+    Returns
+    -------
+    np.ndarray
+        Array containing all the segments of the input lines.
+    """
+    segments_coords = np.column_stack((lines_coords[:-1], lines_coords[1:])).reshape(
+        lines_coords.shape[0] - 1, 2, 2
+    )
+    if same_line_mask is not None:
+        segments_coords = segments_coords[same_line_mask]
+    segments = shapely.linestrings(segments_coords)
+    return segments
+
+
+def get_segments_gdf(lines_gs: gpd.GeoSeries):
+    """Get a GeoDataFrame of all the segments constituting the input lines.
+
+    Parameters
+    ----------
+    lines_gdf : gpd.GeoSeries
+        GeoDataFrame containing input LineStrings.
+
+    Returns
+    -------
+    GeoDataFrame
+        GeoDataFrame containing all the segments of the matching `line_id`.
+    """
+    lines_coords = lines_gs.get_coordinates()
+    is_same_line = lines_coords.index[:-1] == lines_coords.index[1:]
+    segments_gdf = gpd.GeoDataFrame(
+        {
+            "line_id": lines_coords.index[:-1][is_same_line],
+            "geometry": get_segments_arr(lines_coords.values, is_same_line),
+        },
+        crs=lines_gs.crs,
+    ).rename_axis("segment_id")
+    return segments_gdf
