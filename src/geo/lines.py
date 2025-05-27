@@ -123,3 +123,63 @@ def get_segments_gdf(lines_gs: gpd.GeoSeries):
         crs=lines_gs.crs,
     ).rename_axis("segment_id")
     return segments_gdf
+
+
+def get_points_side_of_line(
+    points_gdf: gpd.GeoDataFrame,
+    lines_gdf: gpd.GeoDataFrame,
+    max_distance: float | None = None,
+):
+    """Determine what side of their closest line each point is.
+
+    Parameters
+    ----------
+    points_gdf : gpd.GeoDataFrame
+        GeoDataFrame with all the point geometries.
+    lines_gdf : gpd.GeoDataFrame
+        GeoDataFrame with all the line geometries.
+    max_distance : float
+        Maximum distance the lines can be from the points in order to be considered.
+        None by default, which means there is no maximum distance (note this hits
+        performance).
+
+    Returns
+    -------
+    gpd.GeoDataFrame
+        A GeoDataFrame with every point which has a line no more than `max_distance`
+        away. It contains both their geometries and a column `is_right` telling if the
+        point is on the RHS of the line. If the point is aligned with the line,
+        `is_right` is null.
+    """
+    lines_points_gdf = (
+        points_gdf[["geometry"]]
+        .add_prefix("point_")
+        .set_geometry("point_geometry")
+        .sjoin_nearest(
+            # Reassign the geometry to keep it in the output of the `sjoin`.
+            get_segments_gdf(lines_gdf.geometry).assign(
+                line_geometry=lambda x: x["geometry"]
+            ),
+            how="inner",
+            max_distance=max_distance,
+        )
+        .reset_index()
+        .rename_axis("pair_id")
+    )
+    points_coords = lines_points_gdf["point_geometry"].get_coordinates()
+    lines_coords = lines_points_gdf["line_geometry"].get_coordinates()
+    vec_1p = points_coords[["x", "y"]].values - lines_coords[["x", "y"]].values[::2]
+    vec_12 = (
+        lines_coords[["x", "y"]].values[1::2] - lines_coords[["x", "y"]].values[::2]
+    )
+    a12 = np.angle(vec_12[:, 0] + vec_12[:, 1] * 1j, deg=True)
+    a1o = np.angle(vec_1p[:, 0] + vec_1p[:, 1] * 1j, deg=True)
+    d = a1o - a12
+    mask = (a1o < 0) & (a12 > 0) & (a12 - a1o > 180)
+    d[mask] = a1o[mask] + 360 - a12[mask]
+    mask = (a1o > 0) & (a12 < 0) & (a1o - a12 > 180)
+    d[mask] = a1o[mask] - 360 - a12[mask]
+    lines_points_gdf["is_right"] = d < 0
+    lines_points_gdf["is_right"] = lines_points_gdf["is_right"].astype('boolean')
+    lines_points_gdf.loc[(d == 0) | (vec_1p == 0).all(axis=1), "is_right"] = pd.NA
+    return lines_points_gdf
