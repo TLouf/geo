@@ -180,6 +180,9 @@ def get_points_side_of_line(
     mask = (a1o > 0) & (a12 < 0) & (a1o - a12 > 180)
     d[mask] = a1o[mask] - 360 - a12[mask]
     lines_points_gdf["is_right"] = d < 0
-    lines_points_gdf["is_right"] = lines_points_gdf["is_right"].astype('boolean')
-    lines_points_gdf.loc[(d == 0) | (vec_1p == 0).all(axis=1), "is_right"] = pd.NA
+    lines_points_gdf["is_right"] = lines_points_gdf["is_right"].astype("boolean")
+    lines_points_gdf.loc[
+        (d == 0) | (d == 180) | (vec_1p == 0).all(axis=1),
+        "is_right",
+    ] = pd.NA
     return lines_points_gdf
