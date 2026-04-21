@@ -3,18 +3,35 @@ from __future__ import annotations
 import numpy as np
 
 
-def haversine(lon1, lat1, lon2, lat2, R=6367e3):
-    lon1 = lon1 * np.pi / 180
-    lat1 = lat1 * np.pi / 180
-    lon2 = lon2 * np.pi / 180
-    lat2 = lat2 * np.pi / 180
+def deg_to_rad(theta):
+    return theta * np.pi / 180
 
+
+def haversine(lon1, lat1, lon2, lat2, R=6367e3):
     dlon = lon2 - lon1
     dlat = lat2 - lat1
+    hav = (
+        np.sin(deg_to_rad(dlat / 2)) ** 2
+        + np.cos(deg_to_rad(lat1))
+        * np.cos(deg_to_rad(lat2))
+        * np.sin(deg_to_rad(dlon / 2)) ** 2
+    )
+    theta = 2 * np.arcsin(np.sqrt(hav))
+    d = R * theta
+    return d
 
-    a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
-    c = 2 * np.arcsin(np.sqrt(a))
-    d = R * c
+
+def haversine_expr(lon1_col, lat1_col, lon2_col, lat2_col, R=6367e3):
+    dlon = lon2_col - lon1_col
+    dlat = lat2_col - lat1_col
+    hav = (
+        deg_to_rad(dlat / 2).sin() ** 2
+        + deg_to_rad(lat1_col).cos()
+        * deg_to_rad(lat2_col).cos()
+        * deg_to_rad(dlon / 2).sin() ** 2
+    )
+    theta = 2 * hav.sqrt().arcsin()
+    d = R * theta
     return d
 
 
